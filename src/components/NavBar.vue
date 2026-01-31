@@ -20,7 +20,7 @@ onUnmounted(() => {
   <nav class="navbar" :class="{ 'scrolled': isScrolled }">
     <div class="nav-links">
       <a href="#about" class="nav-item">Sobre mim</a>
-      <a href="#albums" class="nav-item">Albuns</a>
+      <a href="#albums" class="nav-item">Álbuns</a>
       <a href="#contact" class="nav-item">Contato</a>
     </div>
   </nav>

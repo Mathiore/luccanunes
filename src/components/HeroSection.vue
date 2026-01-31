@@ -19,7 +19,7 @@ onMounted(() => {
         <source media="(max-width: 768px)" srcset="../assets/carFundoMobile.png" />
         <img src="../assets/carrofundo.png" alt="Garage Background" class="bg-img" />
       </picture>
-      <div class="overlay"></div>
+      <!-- Overlay removed for original brightness -->
     </div>
 
     <!-- Text Layer (Middle) -->
@@ -65,14 +65,15 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  z-index: 4; /* Moved to front as requested */
+  pointer-events: none; /* Ensure clicks pass through if it's an overlay */
 }
 
 .bg-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.6; /* Dimmed for better text contrast */
+  object-position: center;
 }
 
 .overlay {
@@ -87,9 +88,9 @@ onMounted(() => {
 /* Text Layer - Behind the car */
 .text-layer {
   position: absolute;
-  z-index: 2; /* Middle layer */
+  z-index: 5; /* Middle layer */
   text-align: center;
-  top: 40%; /* Initial position */
+  top: 30%; /* Initial position moved up */
   left: 50%;
   transform: translate(-50%, 20%); /* Start slightly lower */
   opacity: 0;
@@ -99,7 +100,7 @@ onMounted(() => {
 
 .animate-text {
   opacity: 1;
-  transform: translate(-50%, -30%); /* Moved up further from -10% */
+  transform: translate(-50%, -40%); /* Moved up further from -30% */
 }
 
 .main-title {
@@ -129,32 +130,29 @@ onMounted(() => {
 /* Car Layer - Front */
 .car-layer {
   position: absolute;
-  bottom: 0px; 
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3; /* Top layer */
+  top: 0;
+  left: 0;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  pointer-events: none; /* Allow clicking through if needed */
+  height: 100%;
+  z-index: 10; /* Moved to front */
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .car-img {
-  width: auto;
-  max-width: 100%; /* Increased from 90% */
-  height: auto;
-  max-height: 100%; /* Increased from 80vh */
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  filter: drop-shadow(0 -10px 50px rgba(0,0,0,0.5));
+  object-position: center;
   
   /* Initial state */
-  transform: translateY(100px) scale(0.95);
+  transform: translateY(100px) scale(1.05); /* Start slightly zoomed and lower */
   opacity: 0;
-  transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s; /* Delay slightly */
+  transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
 }
 
 .car-img.animate-car {
-  transform: translateY(0) scale(1.1); /* Slight scale up for extra impact */
+  transform: translateY(0) scale(1); /* Return to natural scale to match background */
   opacity: 1;
 }
 
