@@ -11,7 +11,7 @@ defineEmits(['open']);
 
 <template>
     <div class="ui-overlay" :class="{ 'hidden': !visible }">
-        <h2>Explore os <span class="highlight">Álbuns</span></h2>
+        <h2>Explore os Álbuns</h2>
         <button class="explore-btn" @click="$emit('open')">VER ÁLBUNS</button>
     </div>
 </template>
