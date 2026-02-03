@@ -5,6 +5,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
+import { cars } from '../config/cars.js';
+import LoadingScreen from './ui/LoadingScreen.vue';
+
 const canvasRef = ref(null);
 const containerRef = ref(null);
 const overlayRef = ref(null);
@@ -17,15 +20,12 @@ let startCameraPos = new THREE.Vector3(0, 15, 5.0); // Start position (High and 
 let animationProgress = 0;
 let isAnimating = false;
 
-// Grid of Cars
-const carValues = [
-    { path: '/models/auditt.glb', scale: 0.8, name: 'Audi TT' },
-    { path: '/models/ferrari.glb', scale: 0.8, name: 'Ferrari' },
-    { path: '/models/gallardo.glb', scale: 0.8, name: 'Gallardo' },
-    { path: '/models/lambo.glb', scale: 0.8, name: 'Lamborghini' },
-    { path: '/models/masserati.glb', scale: 0.8, name: 'Maserati' },
-    { path: '/models/mclaren.glb', scale: 0.8, name: 'McLaren' },
-];
+// Loading State
+const isLoading = ref(true);
+const loadingProgress = ref(0);
+
+// Grid of Cars (using imported config)
+// gridModels array tracks the scene objects
 const gridModels = [];
 const gridGroup = new THREE.Group();
 gridGroup.visible = false; // Hidden initially
@@ -79,7 +79,53 @@ const init = () => {
   scene.add(spotLight);
 
   // Load Model
-  const loader = new GLTFLoader();
+  const manager = new THREE.LoadingManager();
+  
+  manager.onLoad = () => {
+      // All models loaded
+      console.log('All resources loaded');
+      
+      // PRE-COMPILE / WARM-UP RENDER
+      // We must ensure the objects are actually IN THE FRUSTUM for the renderer to process them.
+      if (renderer && scene && camera) {
+          const originalGridVisible = gridGroup.visible;
+          gridGroup.visible = true;
+          
+          // Save Camera State
+          const originalPos = camera.position.clone();
+          const originalQuat = camera.quaternion.clone();
+          
+          // Move camera to a position where it definitely sees the grid (Z = -8 to -10)
+          camera.position.set(0, 5, 10);
+          camera.lookAt(0, 0, -10);
+          camera.updateMatrixWorld();
+          
+          // Force render to upload all geometry/textures to GPU
+          renderer.render(scene, camera);
+          
+          // Restore Camera
+          camera.position.copy(originalPos);
+          camera.quaternion.copy(originalQuat);
+          camera.updateMatrixWorld();
+          
+          gridGroup.visible = originalGridVisible;
+      }
+
+      // Minimal delay just to let UI update
+      setTimeout(() => {
+          isLoading.value = false;
+      }, 100);
+  };
+  
+  manager.onProgress = (url, itemsLoaded, itemsTotal) => {
+      loadingProgress.value = Math.floor((itemsLoaded / itemsTotal) * 100);
+  };
+  
+  manager.onError = (url) => {
+      console.error('There was an error loading ' + url);
+  };
+
+  const loader = new GLTFLoader(manager);
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
   loader.setDRACOLoader(dracoLoader);
@@ -141,7 +187,7 @@ const loadGrid = (loader) => {
     scene.add(gridGroup);
     
     // Load all models first
-    carValues.forEach((carDef, index) => {
+    cars.forEach((carDef, index) => {
         loader.load(carDef.path, (gltf) => {
              const car = gltf.scene;
              const box = new THREE.Box3().setFromObject(car);
@@ -160,6 +206,13 @@ const loadGrid = (loader) => {
              const localBox = new THREE.Box3().setFromObject(car);
              const localCenter = localBox.getCenter(new THREE.Vector3());
              car.position.copy(localCenter).multiplyScalar(-1);
+             
+             // Disable frustum culling to prevent pop-in
+             car.traverse((child) => {
+                 if (child.isMesh) {
+                     child.frustumCulled = false;
+                 }
+             });
              
              
              // Add 2D Square Frame
@@ -224,7 +277,7 @@ const updateGridLayout = () => {
         const row = Math.floor(index / cols);
         
         // Recalculate rows count for centering
-        const totalRows = Math.ceil(carValues.length / cols);
+        const totalRows = Math.ceil(cars.length / cols);
         
         const x = (col - (cols - 1) / 2) * spacingX;
         const y = (row - (totalRows - 1) / 2) * spacingY; // Vertical centering
@@ -266,37 +319,13 @@ const startAnimation = () => {
 const onScroll = () => {
     if (!containerRef.value || !camera) return;
     
-    // If falling animation is still running, letting it finish avoids conflict.
-    // Ideally we might want to blend, but simple blocking is safer for now.
     if (isAnimating) return;
-    
-    // Check if we are past the initial animation
-    // But actually, let's map scroll directly if the user wants "scroll down effect"
-    // The previous request was "falls from top", then "scroll gives zoom".
     
     const rect = containerRef.value.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     
-    // Calculate progress through the section (which will be taller now)
-    // 0 = top of section enters viewport
-    // 1 = bottom of section leaves viewport
-    // But we want it pinned.
-    
-    // progress = (viewportHeight - rect.top) / (rect.height + viewportHeight); 
-    // This is valid for scrolling through.
-    
-    // Let's use simple sticky logic:
-    // If top is <= 0, map -top to progress.
-    
     let scrollP = -rect.top / (rect.height - viewportHeight);
     scrollP = Math.max(0, Math.min(1, scrollP));
-    
-    // Map scrollP to Camera Z
-    // Start at our "close" position (Z=0.8) and zoom INTO the lens (Z=0.1 or less)
-    // Wait, the user wants "falls then scroll".
-    
-    // If animation is running (falling), let it finish or override?
-    // Let's assume falling happens on entry, then scrolling takes over.
     
     if (!isAnimating) {
          // Scroll moves from 'targetCameraPos' (0.8) to 'insidePos' (0.1)
@@ -315,10 +344,11 @@ const onScroll = () => {
          if (model) {
              model.rotation.y = scrollP * Math.PI; 
              // Hide model at the very end to simulate looking "through" it
-             model.visible = scrollP < 0.98;
+             const switchThreshold = 0.90;
+             model.visible = scrollP < switchThreshold;
              
              // Show Grid only at the end
-             gridGroup.visible = scrollP >= 0.98;
+             gridGroup.visible = scrollP >= switchThreshold;
          }
 
          // Update background color (White to Black)
@@ -413,6 +443,9 @@ onBeforeUnmount(() => {
 
 <template>
   <section ref="containerRef" class="cannon-section">
+    <!-- Loading Overlay Logic-->
+    <LoadingScreen :is-loading="isLoading" :progress="loadingProgress" />
+  
     <div ref="stickyWrapperRef" class="sticky-wrapper">
         <div ref="backgroundRef" class="background-layer">
             <h1 class="cursive-bg-text">Lucca Nunes</h1>
@@ -435,7 +468,7 @@ onBeforeUnmount(() => {
 .cannon-section {
   position: relative;
   width: 100%;
-  height: 400vh; /* Very tall to allow scrolling */
+  height: 300vh; /* Reduced height for faster interaction */
   background-color: #000;
 }
 
@@ -514,6 +547,11 @@ onBeforeUnmount(() => {
 @keyframes blink {
     50% { opacity: 0; }
 }
+
+
+
+/* Loading styles moved to LoadingScreen.vue */
+
 
 
 </style>
