@@ -11,6 +11,7 @@ import LoadingScreen from './ui/LoadingScreen.vue';
 import AlbumModal from './ui/AlbumModal.vue';
 import CameraOverlay from './ui/CameraOverlay.vue';
 import BackgroundLayer from './ui/BackgroundLayer.vue';
+import PortfolioMenu from './ui/PortfolioMenu.vue';
 
 const canvasRef = ref(null);
 const containerRef = ref(null);
@@ -34,12 +35,9 @@ const isMobile = window.innerWidth < 768;
 const showAlbum = ref(false);
 const selectedAlbum = ref(null);
 
-// Grid of Cars (using imported config)
-// gridModels array tracks the scene objects
-const gridModels = [];
-const gridGroup = new THREE.Group();
-gridGroup.visible = false; // Hidden initially
-const interactionPlanes = []; // Planes for hover detection
+const isMenuVisible = ref(false); // Controls 2D Menu visibility
+
+// Grid of Cars Removed (User Request)
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
@@ -104,13 +102,10 @@ const init = () => {
       // PRE-COMPILE / WARM-UP RENDER
       // We must ensure the objects are actually IN THE FRUSTUM for the renderer to process them.
       if (renderer && scene && camera) {
-          const originalGridVisible = gridGroup.visible;
-          gridGroup.visible = true;
-          
           // Save Camera State
           const originalPos = camera.position.clone();
           const originalQuat = camera.quaternion.clone();
-          
+
           // Move camera to a position where it definitely sees the grid (Z = -8 to -10)
           camera.position.set(0, 5, 10);
           camera.lookAt(0, 0, -10);
@@ -123,8 +118,6 @@ const init = () => {
           camera.position.copy(originalPos);
           camera.quaternion.copy(originalQuat);
           camera.updateMatrixWorld();
-          
-          gridGroup.visible = originalGridVisible;
       }
 
       // Minimal delay just to let UI update
@@ -186,8 +179,7 @@ const init = () => {
     console.error('An error happened loading the Cannon:', error);
   });
   
-  // Load Grid Models
-  loadGrid(loader);
+  // Grid loading removed
 
   // Handle Resize
   window.addEventListener('resize', onResize);
@@ -200,151 +192,9 @@ const init = () => {
     window.addEventListener('touchend', onTouchEnd);
 };
 
-// Store grid objects for responsive updates
-let gridPivots = [];
+// Store grid objects (Removed)
 
-const loadGrid = (loader) => {
-    scene.add(gridGroup);
-    
-    // Load all models first
-    cars.forEach((carDef, index) => {
-        loader.load(carDef.path, (gltf) => {
-             const car = gltf.scene;
-             const box = new THREE.Box3().setFromObject(car);
-             const size = box.getSize(new THREE.Vector3());
-             const maxDim = Math.max(size.x, size.y, size.z);
-             const scaleFactor = 1.5 / maxDim;
-             car.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
-             const center = box.getCenter(new THREE.Vector3());
-             car.position.sub(center.multiplyScalar(scaleFactor));
-             
-             const pivot = new THREE.Group();
-             pivot.add(car);
-             
-             // Center car geometry in pivot
-             const localBox = new THREE.Box3().setFromObject(car);
-             const localCenter = localBox.getCenter(new THREE.Vector3());
-             car.position.copy(localCenter).multiplyScalar(-1);
-             
-             // Disable frustum culling to prevent pop-in
-             car.traverse((child) => {
-                 if (child.isMesh) {
-                     child.frustumCulled = false;
-                 }
-             });
-             
-             
-             // Add 2D Square Frame
-             const frameSize = 1.5; // Reduced Frame size to prevent overlap
-             // Create a square shape path
-             const points = [];
-             points.push(new THREE.Vector3(-frameSize/2, -frameSize/2, 0));
-             points.push(new THREE.Vector3(frameSize/2, -frameSize/2, 0));
-             points.push(new THREE.Vector3(frameSize/2, frameSize/2, 0));
-             points.push(new THREE.Vector3(-frameSize/2, frameSize/2, 0));
-             
-             const frameGeo = new THREE.BufferGeometry().setFromPoints(points);
-             // Use LineLoop to close the square
-             const frame = new THREE.LineLoop(frameGeo, new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.5, transparent: true }));
-             
-             // Position frame roughly behind/around car but facing camera
-             // Since cars are 3D, a 2D frame might clip if goes through.
-             // Let's ensure it's slightly behind or centered.
-             // If we want it "flat" relative to view, it might look odd if we orbit. 
-             // But here view is fixed.
-             // Let's simple enclose.
-             
-             frame.scale.set(1.5, 1, 1); // Aspect ratio
-             pivot.add(frame);
-
-             // Interaction Plane (Hover Background)
-             const planeGeo = new THREE.PlaneGeometry(frameSize, frameSize);
-             const planeMat = new THREE.MeshBasicMaterial({ 
-                 color: 0xffffff, 
-                 side: THREE.DoubleSide, 
-                 transparent: true, 
-                 opacity: 0 // Start invisible
-             });
-             const plane = new THREE.Mesh(planeGeo, planeMat);
-             plane.position.z = -0.01; // Match frame depth roughly
-             plane.scale.set(1.5, 1, 1); // Match frame aspect ratio
-             plane.userData = { isHoverPlane: true, parentPivot: pivot };
-             pivot.add(plane);
-             interactionPlanes.push(plane);
-
-             
-             // Add Text Label
-             const sprite = createTextSprite(carDef.name);
-             sprite.position.set(0, -0.75, 1); // Bottom of frame (adjusted for smaller frame)
-             pivot.add(sprite);
-
-             pivot.userData = { index: index }; // Store index for grid calc
-             gridModels.push(pivot);
-             gridGroup.add(pivot);
-             gridPivots.push(pivot);
-             
-             // Initial positioning
-             updateGridLayout();
-        });
-    });
-};
-
-const updateGridLayout = () => {
-    if (!containerRef.value) return;
-    const isMobile = window.innerWidth < 768;
-    
-    // Adjust layout based on screen size
-    // Mobile: 2 columns, 3 rows? Or 1 column?
-    // User said "2 models appearing", implying cut off.
-    // Let's do 2 columns on mobile, 3 on desktop.
-    
-    const cols = isMobile ? 2 : 3;
-    const spacingX = isMobile ? 2.2 : 4.0; 
-    const spacingY = isMobile ? 2.2 : 2.5;
-    
-    // On mobile, maybe push further back or scale down?
-    // Let's scale the whole group down slightly on mobile or push Z back.
-    const zPos = isMobile ? -10 : -8; // Closer on mobile (-10 vs -14) makes them larger inside the FOV 
-    
-    gridPivots.forEach((pivot) => {
-        const index = pivot.userData.index;
-        const col = index % cols;
-        const row = Math.floor(index / cols);
-        
-        // Recalculate rows count for centering
-        const totalRows = Math.ceil(cars.length / cols);
-        
-        const x = (col - (cols - 1) / 2) * spacingX;
-        const y = (row - (totalRows - 1) / 2) * spacingY; // Vertical centering
-        
-        pivot.position.set(x, -y, zPos); // Invert Y for correct top-down order usually
-    });
-};
-
-const createTextSprite = (text) => {
-    const canvas = document.createElement('canvas');
-    const size = 512;
-    canvas.width = size;
-    canvas.height = size / 4;
-    const context = canvas.getContext('2d');
-    
-    context.fillStyle = 'rgba(0,0,0,0)'; // Transparent
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    
-    context.font = 'bold 40px Arial'; // Smaller font
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.fillStyle = '#D4AF37'; // Gold
-    context.fillText(text, size / 2, size / 8);
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.SpriteMaterial({ map: texture });
-    const sprite = new THREE.Sprite(material);
-    sprite.scale.set(2, 0.5, 1);
-    
-    return sprite;
-};
 
 
 const startAnimation = () => {
@@ -398,42 +248,15 @@ const animate = () => {
           const switchThreshold = 0.90;
           model.visible = scrollP < switchThreshold;
           
-          gridGroup.visible = scrollP >= switchThreshold;
+          isMenuVisible.value = scrollP >= switchThreshold;
       }
   }
 
   // Slight rotation of model for dynamism REMOVED
   
-  // Hover Logic
-  if (gridGroup.visible) {
-      raycaster.setFromCamera(pointer, camera);
-      const intersects = raycaster.intersectObjects(interactionPlanes);
-      
-      // Determine hovered plane
-      let hoveredPlane = null;
-      if (intersects.length > 0) {
-          hoveredPlane = intersects[0].object;
-      }
-      
-      // Update Opacities
-      interactionPlanes.forEach(plane => {
-          const targetOpacity = (plane === hoveredPlane) ? 0.6 : 0.0; // 0.6 visible white
-          plane.material.opacity += (targetOpacity - plane.material.opacity) * 0.1;
-      });
-      
-      // Cursor pointer
-      document.body.style.cursor = hoveredPlane ? 'pointer' : 'auto';
-  }
-
-  // Rotate Grid Models
-  if (gridGroup.visible) {
-      gridModels.forEach(pivot => {
-          // The car is the first child (index 0) of the pivot group
-          if (pivot.children[0]) {
-            pivot.children[0].rotation.y += 0.01; 
-          }
-      });
-  }
+  // Hover Logic Removed
+  
+  // Rotate Grid Models Removed
 
 
 
@@ -447,29 +270,8 @@ const onPointerMove = (event) => {
 };
 
 const checkIntersection = (clientX, clientY) => {
-    if (!gridGroup.visible) return;
-    if (showAlbum.value) return; // Don't check if album is open
-
-    pointer.x = (clientX / window.innerWidth) * 2 - 1;
-    pointer.y = - (clientY / window.innerHeight) * 2 + 1;
-    
-    raycaster.setFromCamera(pointer, camera);
-    const intersects = raycaster.intersectObjects(interactionPlanes);
-    
-    if (intersects.length > 0) {
-        const hoveredPlane = intersects[0].object;
-        if (hoveredPlane.userData.parentPivot) {
-            const index = hoveredPlane.userData.parentPivot.userData.index;
-            const carDef = cars[index];
-            if (carDef && carDef.albumId) {
-                const album = albums.find(a => a.id === carDef.albumId);
-                if (album) {
-                    selectedAlbum.value = album;
-                    showAlbum.value = true;
-                }
-            }
-        }
-    }
+    // 3D Intersection logic removed.
+    // PortfolioMenu handles clicks now.
 };
 
 const onCanvasClick = (event) => {
@@ -500,6 +302,14 @@ const onTouchEnd = (e) => {
         }
     }
 };
+const handleFolderSelection = (id) => {
+    if (id === 'albums') {
+        // Open first album or a dashboard - using first album as placeholder
+        selectedAlbum.value = albums[0];
+        showAlbum.value = true; // Still use this modal for now
+    }
+    // Handle others (about, contact, license)
+};
 
 const onResize = () => {
   if (!containerRef.value) return;
@@ -511,7 +321,7 @@ const onResize = () => {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
   
-  updateGridLayout();
+  // updateGridLayout(); // Function removed
 };
 
 onMounted(() => {
@@ -554,6 +364,7 @@ onBeforeUnmount(() => {
     <div ref="stickyWrapperRef" class="sticky-wrapper">
         <BackgroundLayer :scroll-progress="currentScrollP" :is-loading="isLoading" />
         <canvas ref="canvasRef" class="webgl-canvas"></canvas>
+        <PortfolioMenu v-if="isMenuVisible" @select-folder="handleFolderSelection" />
         <CameraOverlay :scroll-progress="currentScrollP" />
     </div>
   </section>
