@@ -79,7 +79,6 @@ export const albums = [
     cover: '/models/Mustang blue/DSC01243.jpg',
     images: [
       '/models/Mustang blue/DSC01238.jpg',
-      '/models/Mustang blue/DSC01243-2.jpg',
       '/models/Mustang blue/DSC01243.jpg'
     ]
   },
