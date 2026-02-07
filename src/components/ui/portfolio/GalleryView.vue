@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
     isActive: Boolean,
@@ -10,7 +10,15 @@ const props = defineProps({
     currentImages: Array
 });
 
-const emit = defineEmits(['select-album', 'select-image']);
+const emit = defineEmits(['select-album', 'select-image', 'select-album-end']);
+
+// Navigation State
+const transitionName = ref('fade-slide');
+const isTransitioning = ref(false);
+
+// Touch State
+const touchStart = ref({ x: 0, y: 0 });
+const touchEnd = ref({ x: 0, y: 0 });
 
 // Formatting Albums for Menu
 const menuItems = computed(() => props.albums.map((album, index) => ({
@@ -20,12 +28,92 @@ const menuItems = computed(() => props.albums.map((album, index) => ({
     index
 })));
 
+// Watch for index changes to determine transition direction
+watch(() => props.currentImageIndex, (newVal, oldVal) => {
+    transitionName.value = newVal > oldVal ? 'slide-left' : 'slide-right';
+});
+
 const selectAlbum = (index) => {
     emit('select-album', index);
 };
 
 const selectImage = (index) => {
     emit('select-image', index);
+};
+
+// --- HANDLERS ---
+
+// 1. Scroll / Wheel
+const handleWheel = (e) => {
+    if (!props.isActive || isTransitioning.value) return;
+    
+    // Throttle slightly
+    isTransitioning.value = true;
+    setTimeout(() => isTransitioning.value = false, 400); // 400ms lockout
+
+    if (e.deltaY > 0) {
+        // Scroll Down -> Next Image
+        nextImage();
+    } else {
+        // Scroll Up -> Prev Image
+        prevImage();
+    }
+};
+
+// 2. Touch / Swipe
+const handleTouchStart = (e) => {
+    touchStart.value.x = e.changedTouches[0].screenX;
+    touchStart.value.y = e.changedTouches[0].screenY;
+};
+
+const handleTouchEnd = (e) => {
+    if (!props.isActive) return;
+
+    touchEnd.value.x = e.changedTouches[0].screenX;
+    touchEnd.value.y = e.changedTouches[0].screenY;
+    
+    handleGesture();
+};
+
+const handleGesture = () => {
+    const dx = touchEnd.value.x - touchStart.value.x;
+    const dy = touchEnd.value.y - touchStart.value.y;
+    
+    // Check if horizontal swipe dominant and long enough
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+        if (dx < 0) {
+            // Swipe Left -> Next Image
+            nextImage();
+        } else {
+            // Swipe Right -> Prev Image
+            prevImage();
+        }
+    }
+};
+
+// Helpers
+const nextImage = () => {
+    if (props.currentImageIndex < props.currentImages.length - 1) {
+        // Next image in current album
+        selectImage(props.currentImageIndex + 1);
+    } else {
+        // End of album -> Go to next album's first image
+        const nextAlbumIdx = (props.currentAlbumIndex + 1) % props.albums.length;
+        selectAlbum(nextAlbumIdx);
+    }
+};
+
+const prevImage = () => {
+    if (props.currentImageIndex > 0) {
+        // Prev image in current album
+        selectImage(props.currentImageIndex - 1);
+    } else {
+        // Start of album -> Go to prev album's last image
+        let prevAlbumIdx = props.currentAlbumIndex - 1;
+        if (prevAlbumIdx < 0) prevAlbumIdx = props.albums.length - 1;
+        
+        emit('select-album-end', prevAlbumIdx);
+    }
 };
 </script>
 
@@ -48,9 +136,14 @@ const selectImage = (index) => {
             </div>
         </nav>
 
-        <!-- Col 2: Main Image -->
-        <main class="main-display">
-            <transition name="fade-fast" mode="out-in">
+        <!-- Col 2: Main Image (Interactive) -->
+        <main 
+            class="main-display"
+            @wheel.prevent="handleWheel"
+            @touchstart="handleTouchStart"
+            @touchend="handleTouchEnd"
+        >
+            <transition :name="transitionName" mode="out-in">
                 <div :key="currentImage" class="main-image-wrapper">
                     <img :src="currentImage" alt="Gallery Selection" class="main-img" />
                 </div>
@@ -167,6 +260,7 @@ const selectImage = (index) => {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    position: relative;
 }
 
 .main-image-wrapper {
@@ -227,11 +321,39 @@ const selectImage = (index) => {
 }
 
 /* TRANSITIONS */
-.fade-fast-enter-active,
-.fade-fast-leave-active {
+/* Slide Left (Next) */
+.slide-left-enter-active,
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.slide-left-enter-from {
+    opacity: 0;
+    transform: translateX(30px) scale(0.95);
+}
+.slide-left-leave-to {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.95);
+}
+
+/* Slide Right (Prev) */
+.slide-right-enter-from {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.95);
+}
+.slide-right-leave-to {
+    opacity: 0;
+    transform: translateX(30px) scale(0.95);
+}
+
+/* Fallback / Initial */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
     transition: opacity 0.3s ease;
 }
-.fade-fast-enter-from, .fade-fast-leave-to { opacity: 0; }
+.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; }
 
 /* RESPONSIVE */
 @media (max-width: 1024px) {

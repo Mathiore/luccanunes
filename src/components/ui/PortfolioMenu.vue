@@ -42,6 +42,17 @@ const selectAlbum = (index) => {
     currentImageIndex.value = 0;
 };
 
+const selectAlbumEnd = (index) => {
+    currentAlbumIndex.value = index;
+    // Set to last image of new album
+    const album = albums[index];
+    if (album && album.images) {
+        currentImageIndex.value = album.images.length - 1;
+    } else {
+        currentImageIndex.value = 0;
+    }
+};
+
 const selectImage = (index) => {
     currentImageIndex.value = index;
 };
@@ -82,6 +93,7 @@ onMounted(() => {
             :current-images="currentImages"
             @select-album="selectAlbum"
             @select-image="selectImage"
+            @select-album-end="selectAlbumEnd"
         />
 
     </div>
