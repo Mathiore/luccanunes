@@ -3,9 +3,10 @@ import { ref, computed, onMounted } from 'vue';
 import { albums } from '../../config/albums.js';
 import LensView from './portfolio/LensView.vue';
 import GalleryView from './portfolio/GalleryView.vue';
+import AboutMeView from './portfolio/AboutMeView.vue';
 
 // State
-const viewState = ref('lens'); // 'lens' | 'gallery'
+const viewState = ref('lens'); // 'lens' | 'gallery' | 'about'
 const isMobile = ref(false);
 const isZooming = ref(false);
 
@@ -35,6 +36,14 @@ const enterGallery = () => {
             isZooming.value = false;
         }, 100); 
     }, 800); // 800ms matches CSS transition in LensView
+};
+
+const enterAbout = () => {
+    viewState.value = 'about';
+};
+
+const exitAbout = () => {
+    viewState.value = 'gallery';
 };
 
 const selectAlbum = (index) => {
@@ -94,7 +103,15 @@ onMounted(() => {
             @select-album="selectAlbum"
             @select-image="selectImage"
             @select-album-end="selectAlbumEnd"
+            @select-about="enterAbout"
         />
+
+        <transition name="fade-scale">
+            <AboutMeView 
+                v-if="viewState === 'about'"
+                @back="exitAbout"
+            />
+        </transition>
 
     </div>
 </template>
@@ -112,5 +129,17 @@ onMounted(() => {
     font-family: 'Inter', sans-serif;
     overflow: hidden;
     z-index: 100;
+}
+
+/* FADE SCALE TRANSITION */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
 }
 </style>

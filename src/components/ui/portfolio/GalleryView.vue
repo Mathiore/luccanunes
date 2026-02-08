@@ -10,7 +10,7 @@ const props = defineProps({
     currentImages: Array
 });
 
-const emit = defineEmits(['select-album', 'select-image', 'select-album-end']);
+const emit = defineEmits(['select-album', 'select-image', 'select-album-end', 'select-about']);
 
 // Navigation State
 const transitionName = ref('fade-slide');
@@ -132,6 +132,11 @@ const prevImage = () => {
                 >
                     <span class="brand-name">{{ item.title }}</span>
                     <span class="brand-count">{{ item.count }}</span>
+                </div>
+
+                <!-- ABout Me Item -->
+                 <div class="brand-item" @click="$emit('select-about')">
+                    <span class="brand-name">About Me</span>
                 </div>
             </div>
         </nav>
