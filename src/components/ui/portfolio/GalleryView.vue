@@ -33,8 +33,16 @@ watch(() => props.currentImageIndex, (newVal, oldVal) => {
     transitionName.value = newVal > oldVal ? 'slide-left' : 'slide-right';
 });
 
+// Mobile Menu
+const isMenuOpen = ref(false);
+
+const toggleMenu = () => {
+    isMenuOpen.value = !isMenuOpen.value;
+};
+
 const selectAlbum = (index) => {
     emit('select-album', index);
+    isMenuOpen.value = false;
 };
 
 const selectImage = (index) => {
@@ -120,8 +128,18 @@ const prevImage = () => {
 <template>
     <div class="gallery-view-layer" :class="{ active: isActive }">
         
-        <!-- Col 1: Clean Brand Menu -->
-        <nav class="brand-menu">
+        <!-- Mobile Hamburger Button -->
+        <button class="hamburger-btn" @click="toggleMenu" aria-label="Menu">
+            <span class="line"></span>
+            <span class="line"></span>
+            <span class="line"></span>
+        </button>
+
+        <!-- Col 1: Clean Brand Menu (Sidebar on Mobile) -->
+        <nav class="brand-menu" :class="{ 'mobile-open': isMenuOpen }">
+            <!-- Mobile Close Button -->
+            <button class="close-menu-btn" @click="toggleMenu">×</button>
+
             <div class="brand-list">
                 <div 
                     v-for="(item, idx) in menuItems" 
@@ -134,7 +152,7 @@ const prevImage = () => {
                     <span class="brand-count">{{ item.count }}</span>
                 </div>
 
-                <!-- ABout Me Item -->
+                <!-- About Me Item -->
                  <div class="brand-item" @click="$emit('select-about')">
                     <span class="brand-name">About Me</span>
                 </div>
@@ -367,35 +385,82 @@ const prevImage = () => {
     }
 }
 
+/* HAMBURGER & CLOSE BUTTONS (Default hidden) */
+.hamburger-btn, .close-menu-btn {
+    display: none;
+}
+
 @media (max-width: 768px) {
     .gallery-view-layer {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: 1fr auto; /* Content + Thumbs */
     }
 
+    /* HAMBURGER */
+    .hamburger-btn {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        position: absolute; /* Fixed relative to container or absolute */
+        top: 20px; left: 20px;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.28);
+        border: none;
+        padding: 10px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .hamburger-btn .line {
+        width: 24px; height: 2px; background: #fff;
+    }
+
+    /* SIDEBAR MENU */
     .brand-menu {
-        padding: 1rem 0;
-        grid-row: 1;
+        position: fixed;
+        top: 0; left: 0;
+        width: 280px;
+        height: 100%; /* Full viewport height */
         background: #0a0a0a;
-        border-bottom: 1px solid #1a1a1a;
-        width: 100%;
-        overflow-x: auto;
+        border-right: 1px solid #222;
+        z-index: 200; /* Above everything */
+        padding: 4rem 2rem;
+        transform: translateX(-105%);
+        transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .brand-menu.mobile-open {
+        transform: translateX(0);
+        box-shadow: 20px 0 50px rgba(0, 0, 0, 0.29);
+    }
+
+    .close-menu-btn {
+        display: block;
+        position: absolute;
+        top: 15px; right: 15px;
+        background: none;
+        border: none;
+        color: #666;
+        font-size: 2rem;
+        cursor: pointer;
     }
 
     .brand-list {
-        flex-direction: row;
-        padding: 0 1.5rem;
-        width: max-content;
-        gap: 2rem;
+        flex-direction: column;
+        padding: 0;
+        width: 100%;
+        gap: 1.5rem;
     }
 
     .brand-item {
-        font-size: 0.9rem;
+        font-size: 1.2rem;
         transform: none !important; 
     }
 
     .thumbnails-sidebar {
-        grid-row: 3;
+        grid-row: 2;
         padding: 1rem 0;
         width: 100%;
         border-top: 1px solid #1a1a1a;

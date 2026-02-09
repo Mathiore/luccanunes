@@ -102,6 +102,15 @@ const licenseStyle = computed(() => {
     };
 });
 
+const scrollIndicatorStyle = computed(() => {
+    // Fade out quickly as user scrolls (by 5% progress)
+    const opacity = 1 - (scrollProgress.value * 20); 
+    return {
+        opacity: Math.max(0, opacity),
+        pointerEvents: 'none'
+    };
+});
+
 const goBack = () => {
     emit('back');
 };
@@ -198,6 +207,12 @@ const goBack = () => {
         <!-- Scroll Track (Invisible Scroller) -->
         <div class="scroll-track" ref="scrollContainer" @scroll="handleScroll">
             <div class="scroll-spacer"></div>
+        </div>
+        
+        <!-- Scroll Down Indicator -->
+        <div class="scroll-down-indicator" :style="scrollIndicatorStyle">
+            <span class="indicator-text">SCROLL DOWN</span>
+            <span class="indicator-arrow">↓</span>
         </div>
         
     </div>
@@ -553,5 +568,42 @@ const goBack = () => {
     border-top: 1px solid #222;
     padding-top: 1rem;
     margin-top: 1rem;
+}
+
+/* SCROLL INDICATOR */
+.scroll-down-indicator {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 100;
+    pointer-events: none;
+    /* Animation moved to children to avoid overriding opacity/transform */
+}
+
+.indicator-text {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: #ff0000;
+    text-transform: uppercase;
+    opacity: 0.8;
+    animation: pulse-vertical 2s infinite ease-in-out;
+}
+
+.indicator-arrow {
+    font-size: 1.2rem;
+    color: #ff0000;
+    font-weight: 300;
+    animation: pulse-vertical 2s infinite ease-in-out;
+}
+
+@keyframes pulse-vertical {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(5px); opacity: 1; }
 }
 </style>
