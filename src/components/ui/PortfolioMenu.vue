@@ -43,7 +43,7 @@ const enterAbout = () => {
 };
 
 const exitAbout = () => {
-    viewState.value = 'gallery';
+    viewState.value = 'lens';
 };
 
 const selectAlbum = (index) => {
