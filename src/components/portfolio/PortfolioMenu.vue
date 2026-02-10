@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { albums } from '../../config/albums.js';
-import LensView from './portfolio/LensView.vue';
-import GalleryView from './portfolio/GalleryView.vue';
-import AboutMeView from './portfolio/AboutMeView.vue';
+import LensView from './LensView.vue';
+import GalleryView from './GalleryView.vue';
+import AboutMeView from './AboutMeView.vue';
 
 // State
 const viewState = ref('lens'); // 'lens' | 'gallery' | 'about'

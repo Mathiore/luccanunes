@@ -7,11 +7,11 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 
 import { cars } from '../config/cars.js';
 import { albums } from '../config/albums.js';
-import LoadingScreen from './ui/LoadingScreen.vue';
-import AlbumModal from './ui/AlbumModal.vue';
-import CameraOverlay from './ui/CameraOverlay.vue';
-import BackgroundLayer from './ui/BackgroundLayer.vue';
-import PortfolioMenu from './ui/PortfolioMenu.vue';
+import LoadingScreen from '../components/ui/LoadingScreen.vue';
+import AlbumModal from '../components/ui/AlbumModal.vue';
+import CameraOverlay from '../components/layout/CameraOverlay.vue';
+import BackgroundLayer from '../components/layout/BackgroundLayer.vue';
+import PortfolioMenu from '../components/portfolio/PortfolioMenu.vue';
 
 const canvasRef = ref(null);
 const containerRef = ref(null);

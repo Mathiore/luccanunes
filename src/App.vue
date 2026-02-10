@@ -1,5 +1,5 @@
 <script setup>
-import CannonSection from './components/CannonSection.vue'
+import CannonSection from './sections/CannonSection.vue'
 </script>
 
 <template>
