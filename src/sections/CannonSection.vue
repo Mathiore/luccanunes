@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-import { cars } from '../config/cars.js';
+
 import { albums } from '../config/albums.js';
 import LoadingScreen from '../components/ui/LoadingScreen.vue';
 import AlbumModal from '../components/ui/AlbumModal.vue';

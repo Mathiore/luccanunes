@@ -9,6 +9,7 @@ const emit = defineEmits(['back']);
 // State
 const containerRef = ref(null);
 const scrollProgress = ref(0);
+const isAutoScrolling = ref(false);
 
 // Scroll Handler
 const handleScroll = () => {
@@ -30,16 +31,74 @@ const handleScrollUp = (e) => {
     }
 };
 
+// Automatic Animation Logic
+const startAutoScroll = () => {
+    if (!containerRef.value) return;
+
+    // Wait slightly for transition to settle
+    setTimeout(() => {
+        if (!containerRef.value) return;
+        
+        const start = containerRef.value.scrollTop;
+        const maxScroll = containerRef.value.scrollHeight - containerRef.value.clientHeight;
+        const target = maxScroll; // Scroll to end to show full distancing
+        const startTime = performance.now();
+        const duration = 2500; // 2.5s for a smooth cinematic feel
+
+        isAutoScrolling.value = true;
+
+        const step = (currentTime) => {
+            if (!isAutoScrolling.value) return;
+
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Ease Out Cubic
+            const ease = 1 - Math.pow(1 - progress, 3);
+            
+            if (containerRef.value) {
+                containerRef.value.scrollTop = start + (target - start) * ease;
+            }
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                isAutoScrolling.value = false;
+            }
+        };
+
+        requestAnimationFrame(step);
+    }, 500);
+};
+
+const stopAutoScroll = () => {
+    if (isAutoScrolling.value) {
+        isAutoScrolling.value = false;
+    }
+};
+
 onMounted(() => {
     if (containerRef.value) {
         containerRef.value.addEventListener('wheel', handleScrollUp);
+        
+        // Auto Scroll Interruption Listeners
+        containerRef.value.addEventListener('wheel', stopAutoScroll, { passive: true });
+        containerRef.value.addEventListener('touchstart', stopAutoScroll, { passive: true });
+        containerRef.value.addEventListener('mousedown', stopAutoScroll, { passive: true });
+    
+        // Start Auto Scroll
+        startAutoScroll();
     }
 });
 
 onBeforeUnmount(() => {
     if (containerRef.value) {
         containerRef.value.removeEventListener('wheel', handleScrollUp);
+        containerRef.value.removeEventListener('wheel', stopAutoScroll);
+        containerRef.value.removeEventListener('touchstart', stopAutoScroll);
+        containerRef.value.removeEventListener('mousedown', stopAutoScroll);
     }
+    isAutoScrolling.value = false;
 });
 </script>
 

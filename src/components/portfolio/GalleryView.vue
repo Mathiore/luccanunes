@@ -1,5 +1,8 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
+import GallerySidebar from './gallery/GallerySidebar.vue';
+import GalleryMain from './gallery/GalleryMain.vue';
+import GalleryThumbnails from './gallery/GalleryThumbnails.vue';
 
 const props = defineProps({
     isActive: Boolean,
@@ -14,11 +17,6 @@ const emit = defineEmits(['select-album', 'select-image', 'select-album-end', 's
 
 // Navigation State
 const transitionName = ref('fade-slide');
-const isTransitioning = ref(false);
-
-// Touch State
-const touchStart = ref({ x: 0, y: 0 });
-const touchEnd = ref({ x: 0, y: 0 });
 
 // Formatting Albums for Menu
 const menuItems = computed(() => props.albums.map((album, index) => ({
@@ -40,81 +38,31 @@ const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value;
 };
 
-const selectAlbum = (index) => {
+const handleSelectAlbum = (index) => {
     emit('select-album', index);
     isMenuOpen.value = false;
 };
 
-const selectImage = (index) => {
+const handleSelectImage = (index) => {
     emit('select-image', index);
-};
-
-// --- HANDLERS ---
-
-// 1. Scroll / Wheel
-const handleWheel = (e) => {
-    if (!props.isActive || isTransitioning.value) return;
-    
-    // Throttle slightly
-    isTransitioning.value = true;
-    setTimeout(() => isTransitioning.value = false, 400); // 400ms lockout
-
-    if (e.deltaY > 0) {
-        // Scroll Down -> Next Image
-        nextImage();
-    } else {
-        // Scroll Up -> Prev Image
-        prevImage();
-    }
-};
-
-// 2. Touch / Swipe
-const handleTouchStart = (e) => {
-    touchStart.value.x = e.changedTouches[0].screenX;
-    touchStart.value.y = e.changedTouches[0].screenY;
-};
-
-const handleTouchEnd = (e) => {
-    if (!props.isActive) return;
-
-    touchEnd.value.x = e.changedTouches[0].screenX;
-    touchEnd.value.y = e.changedTouches[0].screenY;
-    
-    handleGesture();
-};
-
-const handleGesture = () => {
-    const dx = touchEnd.value.x - touchStart.value.x;
-    const dy = touchEnd.value.y - touchStart.value.y;
-    
-    // Check if horizontal swipe dominant and long enough
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-        if (dx < 0) {
-            // Swipe Left -> Next Image
-            nextImage();
-        } else {
-            // Swipe Right -> Prev Image
-            prevImage();
-        }
-    }
 };
 
 // Helpers
 const nextImage = () => {
     if (props.currentImageIndex < props.currentImages.length - 1) {
         // Next image in current album
-        selectImage(props.currentImageIndex + 1);
+        handleSelectImage(props.currentImageIndex + 1);
     } else {
         // End of album -> Go to next album's first image
         const nextAlbumIdx = (props.currentAlbumIndex + 1) % props.albums.length;
-        selectAlbum(nextAlbumIdx);
+        handleSelectAlbum(nextAlbumIdx);
     }
 };
 
 const prevImage = () => {
     if (props.currentImageIndex > 0) {
         // Prev image in current album
-        selectImage(props.currentImageIndex - 1);
+        handleSelectImage(props.currentImageIndex - 1);
     } else {
         // Start of album -> Go to prev album's last image
         let prevAlbumIdx = props.currentAlbumIndex - 1;
@@ -135,58 +83,30 @@ const prevImage = () => {
             <span class="line"></span>
         </button>
 
-        <!-- Col 1: Clean Brand Menu (Sidebar on Mobile) -->
-        <nav class="brand-menu" :class="{ 'mobile-open': isMenuOpen }">
-            <!-- Mobile Close Button -->
-            <button class="close-menu-btn" @click="toggleMenu">×</button>
-
-            <div class="brand-list">
-                <div 
-                    v-for="(item, idx) in menuItems" 
-                    :key="item.id"
-                    class="brand-item"
-                    :class="{ active: currentAlbumIndex === idx }"
-                    @click="selectAlbum(idx)"
-                >
-                    <span class="brand-name">{{ item.title }}</span>
-                    <span class="brand-count">{{ item.count }}</span>
-                </div>
-
-                <!-- About Me Item -->
-                 <div class="brand-item" @click="$emit('select-about')">
-                    <span class="brand-name">About Me</span>
-                </div>
-            </div>
-        </nav>
+        <!-- Col 1: Sidebar -->
+        <GallerySidebar 
+            :menu-items="menuItems"
+            :current-album-index="currentAlbumIndex"
+            :is-menu-open="isMenuOpen"
+            @select-album="handleSelectAlbum"
+            @select-about="$emit('select-about')"
+            @close-menu="isMenuOpen = false"
+        />
 
         <!-- Col 2: Main Image (Interactive) -->
-        <main 
-            class="main-display"
-            @wheel.prevent="handleWheel"
-            @touchstart="handleTouchStart"
-            @touchend="handleTouchEnd"
-        >
-            <transition :name="transitionName" mode="out-in">
-                <div :key="currentImage" class="main-image-wrapper">
-                    <img :src="currentImage" alt="Gallery Selection" class="main-img" />
-                </div>
-            </transition>
-        </main>
+        <GalleryMain 
+            :current-image="currentImage"
+            :transition-name="transitionName"
+            @next="nextImage"
+            @prev="prevImage"
+        />
 
         <!-- Col 3: Thumbnails -->
-        <aside class="thumbnails-sidebar">
-            <div class="thumbs-scroll">
-                <div 
-                    v-for="(img, idx) in currentImages" 
-                    :key="idx"
-                    class="thumb-item"
-                    :class="{ active: currentImageIndex === idx }"
-                    @click="selectImage(idx)"
-                >
-                    <img :src="img" loading="lazy" />
-                </div>
-            </div>
-        </aside>
+        <GalleryThumbnails 
+            :current-images="currentImages"
+            :current-image-index="currentImageIndex"
+            @select-image="handleSelectImage"
+        />
 
     </div>
 </template>
@@ -214,170 +134,6 @@ const prevImage = () => {
     pointer-events: auto;
 }
 
-/* Brand Menu */
-.brand-menu {
-    padding: 3rem 0 3rem 3rem; 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.brand-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-}
-
-.brand-item {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #444; 
-    cursor: pointer;
-    transition: color 0.3s ease, transform 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    position: relative;
-    width: fit-content;
-}
-
-.brand-name {
-    position: relative;
-    z-index: 1;
-}
-
-.brand-count {
-    font-size: 0.7rem;
-    padding: 2px 5px;
-    background: #1a1a1a;
-    border-radius: 4px;
-    color: #444;
-    transition: all 0.3s ease;
-    font-weight: 400;
-}
-
-.brand-item:hover {
-    color: #888;
-}
-.brand-item:hover .brand-count {
-    color: #888;
-    background: #2a2a2a;
-}
-
-.brand-item.active {
-    color: #fff; 
-    font-weight: 700;
-    transform: translateX(5px);
-}
-.brand-item.active .brand-count {
-    color: #000;
-    background: #fff;
-    font-weight: 700;
-}
-
-/* Main Display */
-.main-display {
-    padding: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    position: relative;
-}
-
-.main-image-wrapper {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.main-img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
-}
-
-/* Sidebar Thumbs */
-.thumbnails-sidebar {
-    padding: 2rem 1rem 2rem 0;
-    overflow-y: auto;
-    scrollbar-width: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: center; 
-}
-
-.thumbs-scroll {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.thumb-item {
-    width: 100%;
-    aspect-ratio: 16/9;
-    border-radius: 2px;
-    overflow: hidden;
-    opacity: 0.3;
-    filter: grayscale(100%);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    border: 1px solid transparent;
-}
-
-.thumb-item img {
-    width: 100%; height: 100%; object-fit: cover;
-}
-
-.thumb-item:hover {
-    opacity: 0.6;
-}
-
-.thumb-item.active {
-    opacity: 1;
-    filter: grayscale(0%);
-    border-color: rgba(255,255,255,0.4);
-}
-
-/* TRANSITIONS */
-/* Slide Left (Next) */
-.slide-left-enter-active,
-.slide-left-leave-active,
-.slide-right-enter-active,
-.slide-right-leave-active {
-    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.slide-left-enter-from {
-    opacity: 0;
-    transform: translateX(30px) scale(0.95);
-}
-.slide-left-leave-to {
-    opacity: 0;
-    transform: translateX(-30px) scale(0.95);
-}
-
-/* Slide Right (Prev) */
-.slide-right-enter-from {
-    opacity: 0;
-    transform: translateX(-30px) scale(0.95);
-}
-.slide-right-leave-to {
-    opacity: 0;
-    transform: translateX(30px) scale(0.95);
-}
-
-/* Fallback / Initial */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-    transition: opacity 0.3s ease;
-}
-.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; }
-
 /* RESPONSIVE */
 @media (max-width: 1024px) {
     .gallery-view-layer {
@@ -385,8 +141,8 @@ const prevImage = () => {
     }
 }
 
-/* HAMBURGER & CLOSE BUTTONS (Default hidden) */
-.hamburger-btn, .close-menu-btn {
+/* HAMBURGER BUTTON (Default hidden) */
+.hamburger-btn {
     display: none;
 }
 
@@ -412,73 +168,6 @@ const prevImage = () => {
     }
     .hamburger-btn .line {
         width: 24px; height: 2px; background: #fff;
-    }
-
-    /* SIDEBAR MENU */
-    .brand-menu {
-        position: fixed;
-        top: 0; left: 0;
-        width: 280px;
-        height: 100%; /* Full viewport height */
-        background: #0a0a0a;
-        border-right: 1px solid #222;
-        z-index: 200; /* Above everything */
-        padding: 4rem 2rem;
-        transform: translateX(-105%);
-        transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-    }
-
-    .brand-menu.mobile-open {
-        transform: translateX(0);
-        box-shadow: 20px 0 50px rgba(0, 0, 0, 0.29);
-    }
-
-    .close-menu-btn {
-        display: block;
-        position: absolute;
-        top: 15px; right: 15px;
-        background: none;
-        border: none;
-        color: #666;
-        font-size: 2rem;
-        cursor: pointer;
-    }
-
-    .brand-list {
-        flex-direction: column;
-        padding: 0;
-        width: 100%;
-        gap: 1.5rem;
-    }
-
-    .brand-item {
-        font-size: 1.2rem;
-        transform: none !important; 
-    }
-
-    .thumbnails-sidebar {
-        grid-row: 2;
-        padding: 1rem 0;
-        width: 100%;
-        border-top: 1px solid #1a1a1a;
-        justify-content: flex-start;
-    }
-
-    .thumbs-scroll {
-        flex-direction: row;
-        padding: 0 1rem;
-        overflow-x: auto;
-        width: 100%;
-        border: none;
-    }
-
-    .thumb-item {
-        width: 80px;
-        height: 50px;
-        flex-shrink: 0;
     }
 }
 </style>

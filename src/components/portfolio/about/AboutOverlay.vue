@@ -11,7 +11,8 @@ defineProps({
     <div class="overlay-container">
         <!-- Title -->
         <div class="title-overlay" :style="{ opacity: scrollProgress > 0.4 ? (scrollProgress - 0.4) * 4 : 0 }">
-            <h1>LUCCA NUNES</h1>
+            <h2>Transformando potência, design e exclusividade em arte visual.</h2>
+            <p>@luccapture</p>
         </div>
 
         <!-- Scroll Indicator -->

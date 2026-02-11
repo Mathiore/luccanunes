@@ -106,8 +106,6 @@ const getPolaroidStyle = (card, index) => {
 .polaroid-img {
     width: 100%; height: 100%;
     object-fit: cover;
-    filter: grayscale(100%);
-    transition: filter 0.3s;
 }
 
 @media (max-width: 768px) {
