@@ -42,6 +42,20 @@ const enterAbout = () => {
     viewState.value = 'about';
 };
 
+const exitGallery = () => {
+    if (isZooming.value) return;
+    
+    // Start with "zoomed" state (matching gallery)
+    isZooming.value = true;
+    viewState.value = 'lens';
+
+    // Slightly delay releasing the zoom to allow Vue to render the "start" state
+    // Then set to false to trigger CSS transition to "lens" state
+    setTimeout(() => {
+        isZooming.value = false;
+    }, 50);
+};
+
 const exitAbout = () => {
     viewState.value = 'lens';
 };
@@ -104,6 +118,7 @@ onMounted(() => {
             @select-image="selectImage"
             @select-album-end="selectAlbumEnd"
             @select-about="enterAbout"
+            @select-lens="exitGallery"
         />
 
         <transition name="fade-scale">

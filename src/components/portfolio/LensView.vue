@@ -47,6 +47,12 @@ const updateLens = () => {
     animationFrame = requestAnimationFrame(updateLens);
 };
 
+const totalTicks = computed(() => props.isMobile ? 31 : 61);
+const tickIndices = computed(() => props.isMobile 
+    ? { v01: 5, v02: 15, v03: 25 } 
+    : { v01: 10, v02: 30, v03: 50 }
+);
+
 // Compute styles based on pixel position
 const lensStyle = computed(() => {
     // Always return variables for dynamic positioning
@@ -132,13 +138,13 @@ onBeforeUnmount(() => {
         <!-- ZOOM RULER (Decoration) -->
         <div class="zoom-ruler">
             <div class="ruler-track">
-                <div v-for="n in 61" :key="n" class="tick" :class="{ major: (n-1) % 10 === 0 }">
-                    <span v-if="(n-1) === 10" class="tick-label">01</span>
-                    <span v-if="(n-1) === 30" class="tick-label">02</span>
-                    <span v-if="(n-1) === 50" class="tick-label">03</span>
+                <div v-for="n in totalTicks" :key="n" class="tick" :class="{ major: (n-1) % 10 === 0 }">
+                    <span v-if="(n-1) === tickIndices.v01" class="tick-label">01</span>
+                    <span v-if="(n-1) === tickIndices.v02" class="tick-label">02</span>
+                    <span v-if="(n-1) === tickIndices.v03" class="tick-label">03</span>
                     
                     <!-- Red Dot indicator near 02 -->
-                    <div v-if="(n-1) === 30" class="red-dot-indicator"></div>
+                    <div v-if="(n-1) === tickIndices.v02" class="red-dot-indicator"></div>
                 </div>
             </div>
         </div>
@@ -297,6 +303,12 @@ onBeforeUnmount(() => {
     display: flex;
     gap: 12px;
     align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+    .ruler-track {
+        gap: 8px;
+    }
 }
 
 .tick {

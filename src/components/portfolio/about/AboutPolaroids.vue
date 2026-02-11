@@ -45,10 +45,16 @@ const getPolaroidStyle = (card, index) => {
     const startOffset = -1200;
     const currentOffset = startOffset * (1 - t);
 
+    
+    let topPos = card.y;
+    const isMobile = window.innerWidth < 768;
+    const verticalShift = isMobile ? -100 : 0; // Move up 100px on mobile
+
     return {
         left: card.x,
-        top: card.y,
-        transform: `translate(-50%, -50%) translateY(${currentOffset}px) rotate(${card.rotation}deg)`,
+        top: card.y, // Keep original anchor
+        // Add verticalShift to translateY
+        transform: `translate(-50%, -50%) translateY(${currentOffset + verticalShift}px) rotate(${card.rotation}deg)`,
         opacity: 1, 
         zIndex: card.z
     };

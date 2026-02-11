@@ -13,7 +13,7 @@ const props = defineProps({
     currentImages: Array
 });
 
-const emit = defineEmits(['select-album', 'select-image', 'select-album-end', 'select-about']);
+const emit = defineEmits(['select-album', 'select-image', 'select-album-end', 'select-about', 'select-lens']);
 
 // Navigation State
 const transitionName = ref('fade-slide');
@@ -99,6 +99,7 @@ const prevImage = () => {
             :transition-name="transitionName"
             @next="nextImage"
             @prev="prevImage"
+            @close="$emit('select-lens')"
         />
 
         <!-- Col 3: Thumbnails -->

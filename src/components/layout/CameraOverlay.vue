@@ -17,10 +17,6 @@ const overlayStyle = computed(() => {
 
 <template>
   <div class="viewfinder-overlay" :style="overlayStyle">
-    <div class="ocr-text top-left">REC</div>
-    <div class="ocr-text top-right">BAT 100%</div>
-    <div class="ocr-text bottom-left">ISO 800</div>
-    <div class="ocr-text bottom-right">1/60 F2.8</div>
   </div>
 </template>
 
