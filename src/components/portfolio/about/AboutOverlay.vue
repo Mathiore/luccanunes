@@ -12,7 +12,7 @@ defineProps({
         <!-- Title -->
         <div class="title-overlay" :style="{ opacity: scrollProgress > 0.4 ? (scrollProgress - 0.4) * 4 : 0 }">
             <h2>Transformando potência, design e exclusividade em arte visual.</h2>
-            <p>@luccapture</p>
+            <p><a href="https://instagram.com/luccapture">instagram.com/luccapture</a></p>
         </div>
 
         <!-- Scroll Indicator -->
@@ -39,14 +39,27 @@ defineProps({
     bottom: 10vh; left: 50%;
     transform: translateX(-50%);
     text-align: center;
+    pointer-events: auto; /* Enable clicking */
+    z-index: 600; /* Above scroll-track (z-index 300) */
 }
 
-.title-overlay h1 {
-    font-size: 3rem;
-    font-weight: 900;
-    margin: 0;
+.title-overlay h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
     letter-spacing: -0.02em;
     color: #000;
+}
+
+.title-overlay p {
+    margin: 0;
+    font-size: 1rem;
+    color: #000;
+}
+
+.title-overlay p a {
+    color: inherit;
+    text-decoration: none;
 }
 
 .scroll-indicator {

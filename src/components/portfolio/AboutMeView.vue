@@ -67,8 +67,9 @@ const startAutoScroll = () => {
             }
         };
 
+
         requestAnimationFrame(step);
-    }, 500);
+    }, 100);
 };
 
 const stopAutoScroll = () => {
@@ -154,5 +155,6 @@ onBeforeUnmount(() => {
     width: 100%; height: 100%;
     pointer-events: none; 
     overflow: hidden;
+    z-index: 400;
 }
 </style>
