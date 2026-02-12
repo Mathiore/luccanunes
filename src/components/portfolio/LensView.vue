@@ -124,7 +124,7 @@ onBeforeUnmount(() => {
 
             <!-- Grid Points -->
             <div class="grid-points">
-                <div v-for="n in 24" :key="n" class="point"></div>
+                <div v-for="n in 16" :key="n" class="point"></div>
             </div>
 
             <!-- Bottom Numbering -->
@@ -358,17 +358,17 @@ onBeforeUnmount(() => {
 
 .grid-points {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
     width: 100%; height: 100%;
     place-items: center;
 }
 
 .point {
-    width: 3px; height: 3px;
-    background: #fff;
+    width: 5px; height: 5px;
     opacity: 0.8;
-    box-shadow: 0 0 2px rgba(255,255,255,0.5);
+    box-shadow: 0 0 2px rgba(255, 255, 255, 0.33);
+    border: 1px solid rgba(255, 255, 255, 1);
 }
 
 .corner-mark {

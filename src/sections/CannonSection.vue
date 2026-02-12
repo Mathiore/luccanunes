@@ -395,15 +395,15 @@ onBeforeUnmount(() => {
 .cannon-section {
   position: relative;
   width: 100%;
-  height: 300vh; /* Reduced height for faster interaction */
+  height: 350vh; /* Reduced height for faster interaction */
   background-color: #000;
 }
 
 .sticky-wrapper {
-    position: sticky;
+    position: fixed;
     top: 0;
     width: 100%;
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     /* Default background black to match section */
     background-color: #000000; 

@@ -186,7 +186,8 @@ const textStyle = computed(() => {
     }
 
     .profile-bg {
-        bottom: -23vh; 
+        bottom: auto;
+        top: 31vh; /* Fixed position from top (100vh - 85vh + 23vh offset approx) */
         height: 85vh;
     }
     

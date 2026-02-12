@@ -125,7 +125,7 @@ onBeforeUnmount(() => {
 .about-container {
     position: fixed;
     top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100vw; height: 100dvh;
     background-color: #ffffff;
     z-index: 200;
     font-family: 'Inter', sans-serif;

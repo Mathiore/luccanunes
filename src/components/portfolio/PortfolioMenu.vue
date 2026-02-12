@@ -138,7 +138,7 @@ onMounted(() => {
 .portfolio-mega-container {
     position: absolute;
     top: 0; left: 0;
-    width: 100%; height: 100vh;
+    width: 100%; height: 100dvh;
     background: #0a0a0a;
     color: #e0e0e0;
     font-family: 'Inter', sans-serif;
