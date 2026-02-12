@@ -1,5 +1,6 @@
 <script setup>
-defineProps({
+import { ref, watch, nextTick, onMounted } from 'vue';
+const props = defineProps({
     currentImages: {
         type: Array,
         required: true
@@ -11,17 +12,66 @@ defineProps({
 });
 
 defineEmits(['select-image']);
+
+const itemRefs = ref([]);
+const sidebarRef = ref(null);
+const scrollRef = ref(null);
+
+const scrollToActive = async () => {
+    await nextTick();
+    const activeEl = itemRefs.value[props.currentImageIndex];
+    
+    // Determine mobile state based on CSS breakpoint
+    const isMobile = window.innerWidth <= 768;
+    const container = isMobile ? scrollRef.value : sidebarRef.value;
+
+    if (!activeEl || !container) return;
+
+    const elRect = activeEl.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    if (isMobile) {
+        // Horizontal Scroll
+        const relativeLeft = elRect.left - containerRect.left;
+        const currentScroll = container.scrollLeft;
+        const targetScroll = currentScroll + relativeLeft - (containerRect.width / 2) + (elRect.width / 2);
+        
+        container.scrollTo({
+            left: targetScroll,
+            behavior: 'smooth'
+        });
+    } else {
+        // Vertical Scroll
+        const relativeTop = elRect.top - containerRect.top;
+        const currentScroll = container.scrollTop;
+        const targetScroll = currentScroll + relativeTop - (containerRect.height / 2) + (elRect.height / 2);
+        
+        container.scrollTo({
+            top: targetScroll,
+            behavior: 'smooth'
+        });
+    }
+};
+
+watch(() => props.currentImageIndex, scrollToActive);
+watch(() => props.currentImages, async () => {
+    itemRefs.value = [];
+    scrollToActive();
+});
+
+onMounted(scrollToActive);
 </script>
 
 <template>
-    <aside class="thumbnails-sidebar">
-        <div class="thumbs-scroll">
+    <aside class="thumbnails-sidebar" ref="sidebarRef">
+        <div class="thumbs-scroll" ref="scrollRef">
             <div 
                 v-for="(img, idx) in currentImages" 
                 :key="idx"
                 class="thumb-item"
                 :class="{ active: currentImageIndex === idx }"
                 @click="$emit('select-image', idx)"
+                :ref="el => itemRefs[idx] = el"
             >
                 <img :src="img" loading="lazy" />
             </div>

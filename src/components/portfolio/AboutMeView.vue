@@ -78,6 +78,46 @@ const stopAutoScroll = () => {
     }
 };
 
+const handleReturn = () => {
+    // Stop any existing auto scroll (forward or whatever)
+    isAutoScrolling.value = false;
+    
+    if (!containerRef.value) return;
+
+    const start = containerRef.value.scrollTop;
+    const target = 0;
+    const startTime = performance.now();
+    const duration = 1500; // Returns faster than it enters
+
+    // We set this true so interaction listeners can cancel it if user manually intervenes
+    isAutoScrolling.value = true;
+
+    const step = (currentTime) => {
+        if (!isAutoScrolling.value) return;
+
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Smooth Ease In Out
+        const ease = progress < 0.5 
+            ? 4 * progress * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        
+        if (containerRef.value) {
+            containerRef.value.scrollTop = start + (target - start) * ease;
+        }
+
+        if (progress < 1) {
+            requestAnimationFrame(step);
+        } else {
+            isAutoScrolling.value = false;
+            goBack();
+        }
+    };
+
+    requestAnimationFrame(step);
+};
+
 onMounted(() => {
     if (containerRef.value) {
         containerRef.value.addEventListener('wheel', handleScrollUp);
@@ -116,6 +156,11 @@ onBeforeUnmount(() => {
             <AboutPolaroids :scroll-progress="scrollProgress" />
             <AboutOverlay :scroll-progress="scrollProgress" />
         </div>
+
+        <!-- Back Button -->
+        <button class="back-btn" @click="handleReturn">
+            VOLTAR
+        </button>
     </div>
 </template>
 
@@ -156,5 +201,35 @@ onBeforeUnmount(() => {
     pointer-events: none; 
     overflow: hidden;
     z-index: 400;
+}
+
+.back-btn {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 30px;
+    background: rgba(0, 0, 0, 0.03); 
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 50px;
+    
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: #444;
+    text-transform: uppercase;
+    
+    cursor: pointer;
+    z-index: 500;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: #000;
+    transform: translateX(-50%) scale(1.05);
 }
 </style>
