@@ -139,7 +139,7 @@ const init = () => {
   dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
   loader.setDRACOLoader(dracoLoader);
 
-  loader.load('/models/Cannon.glb', (gltf) => {
+  loader.load(`${import.meta.env.BASE_URL}models/Cannon.glb`, (gltf) => {
     model = gltf.scene;
     // Center model
     const box = new THREE.Box3().setFromObject(model);
