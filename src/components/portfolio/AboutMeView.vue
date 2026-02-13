@@ -10,6 +10,7 @@ const emit = defineEmits(['back']);
 const containerRef = ref(null);
 const scrollProgress = ref(0);
 const isAutoScrolling = ref(false);
+const currentScrollId = ref(0);
 
 // Scroll Handler
 const handleScroll = () => {
@@ -46,9 +47,14 @@ const startAutoScroll = () => {
         const duration = 2500; // 2.5s for a smooth cinematic feel
 
         isAutoScrolling.value = true;
+        
+        // Unique ID for this scroll instance
+        const scrollId = Date.now();
+        currentScrollId.value = scrollId;
 
         const step = (currentTime) => {
-            if (!isAutoScrolling.value) return;
+            // Check both flag AND if this is the current scroll instance
+            if (!isAutoScrolling.value || currentScrollId.value !== scrollId) return;
 
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
@@ -75,6 +81,7 @@ const startAutoScroll = () => {
 const stopAutoScroll = () => {
     if (isAutoScrolling.value) {
         isAutoScrolling.value = false;
+        currentScrollId.value++; // Invalidate any running scroll
     }
 };
 
@@ -92,8 +99,13 @@ const handleReturn = () => {
     // We set this true so interaction listeners can cancel it if user manually intervenes
     isAutoScrolling.value = true;
 
+    // Unique ID for this scroll instance
+    const scrollId = Date.now();
+    currentScrollId.value = scrollId;
+
     const step = (currentTime) => {
-        if (!isAutoScrolling.value) return;
+        // Check both flag AND id
+        if (!isAutoScrolling.value || currentScrollId.value !== scrollId) return;
 
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);

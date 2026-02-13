@@ -32,6 +32,14 @@ const textStyle = computed(() => {
   // No longer needed to manage opacity separately, handled by parent
   return {};
 });
+
+const restartVideo = (event) => {
+    const video = event.target;
+    if (video) {
+        video.currentTime = 0;
+        video.play().catch(e => console.error("Video restart failed", e));
+    }
+};
 </script>
 
 <template>
@@ -61,16 +69,18 @@ const textStyle = computed(() => {
 
         <!-- Mobile CSS Implementation (Stencil) -->
         <div class="mobile-stencil-container">
-            <video 
-                class="mobile-video" 
-                autoplay 
-                muted 
-                loop 
-                playsinline
-                webkit-playsinline
-                crossorigin="anonymous"
-                src="/carsmov.mp4">
-            </video>
+                <video 
+                    class="mobile-video" 
+                    autoplay 
+                    muted 
+                    loop 
+                    playsinline
+                    webkit-playsinline
+                    crossorigin="anonymous"
+                    preload="auto"
+                    @ended="restartVideo"
+                    src="/carsmov.mp4">
+                </video>
             <div class="stencil-overlay">
                 <span>LUCCA</span>
                 <span>NUNES</span>
@@ -187,7 +197,7 @@ const textStyle = computed(() => {
 
     .profile-bg {
         bottom: auto;
-        top: 31vh; /* Fixed position from top (100vh - 85vh + 23vh offset approx) */
+        top: 38vh; /* Fixed position from top (100vh - 85vh + 23vh offset approx) */
         height: 85vh;
     }
     

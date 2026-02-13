@@ -18,37 +18,53 @@ defineEmits(['select-album', 'select-about', 'close-menu']);
 </script>
 
 <template>
-    <nav class="brand-menu" :class="{ 'mobile-open': isMenuOpen }">
-        <!-- Mobile Close Button -->
-        <button class="close-menu-btn" @click="$emit('close-menu')">×</button>
+    <div class="sidebar-container">
+        <!-- Mobile Overlay -->
+        <div 
+            class="menu-overlay" 
+            :class="{ 'open': isMenuOpen }"
+            @click="$emit('close-menu')"
+        ></div>
 
-        <div class="brand-list">
-            <div 
-                v-for="(item, idx) in menuItems" 
-                :key="item.id"
-                class="brand-item"
-                :class="{ active: currentAlbumIndex === idx }"
-                @click="$emit('select-album', idx)"
-            >
-                <span class="brand-name">{{ item.title }}</span>
-                <span class="brand-count">{{ item.count }}</span>
-            </div>
+        <nav class="brand-menu" :class="{ 'mobile-open': isMenuOpen }">
+            <!-- Mobile Close Button -->
+            <button class="close-menu-btn" @click="$emit('close-menu')">×</button>
 
-            <!-- About Me Item -->
-             <div class="brand-item" @click="$emit('select-about')">
-                <span class="brand-name">About Me</span>
+            <div class="brand-list">
+                <div 
+                    v-for="(item, idx) in menuItems" 
+                    :key="item.id"
+                    class="brand-item"
+                    :class="{ active: currentAlbumIndex === idx }"
+                    @click="$emit('select-album', idx)"
+                >
+                    <span class="brand-name">{{ item.title }}</span>
+                    <span class="brand-count">{{ item.count }}</span>
+                </div>
+
+                <!-- About Me Item -->
+                 <div class="brand-item" @click="$emit('select-about')">
+                    <span class="brand-name">About Me</span>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </div>
 </template>
 
 <style scoped>
+/* Container to act as Grid Item on Desktop */
+.sidebar-container {
+    height: 100%;
+    width: 100%;
+}
+
 /* Brand Menu Styles from GalleryView.vue */
 .brand-menu {
     padding: 3rem 0 3rem 3rem; 
     display: flex;
     flex-direction: column;
     justify-content: center;
+    height: 100%; /* Ensure it fills container on Desktop */
 }
 
 .brand-list {
@@ -109,7 +125,17 @@ defineEmits(['select-album', 'select-about', 'close-menu']);
     display: none;
 }
 
+/* Overlay Default Hidden */
+.menu-overlay {
+    display: none;
+}
+
 @media (max-width: 768px) {
+    /* Prevent wrapper from taking grid space on mobile */
+    .sidebar-container {
+        display: contents;
+    }
+
     /* SIDEBAR MENU MOBILE */
     .brand-menu {
         position: fixed;
@@ -118,7 +144,7 @@ defineEmits(['select-album', 'select-about', 'close-menu']);
         height: 100%; /* Full viewport height */
         background: #0a0a0a;
         border-right: 1px solid #222;
-        z-index: 200; /* Above everything */
+        z-index: 200; /* Above overlay */
         padding: 4rem 2rem;
         transform: translateX(-105%);
         transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -153,6 +179,25 @@ defineEmits(['select-album', 'select-about', 'close-menu']);
     .brand-item {
         font-size: 1.2rem;
         transform: none !important; 
+    }
+
+    /* OVERLAY VISIBLE ON MOBILE */
+    .menu-overlay {
+        display: block;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100dvh;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 150; /* Below menu, above content */
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .menu-overlay.open {
+        opacity: 1;
+        pointer-events: auto;
     }
 }
 </style>
