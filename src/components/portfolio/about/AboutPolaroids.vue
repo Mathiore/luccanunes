@@ -9,10 +9,10 @@ const props = defineProps({
 });
 
 const polaroids = ref([
-    { id: 1, src: '/models/lucca1.jpg', rotation: -8, x: '30%', y: '40%', z: 2 },
-    { id: 2, src: '/models/lucca2.jpg', rotation: 12, x: '60%', y: '35%', z: 1 },
-    { id: 3, src: '/models/lucca3.jpg', rotation: -5, x: '40%', y: '65%', z: 3 },
-    { id: 4, src: '/models/lucca4.jpg', rotation: 6, x: '65%', y: '60%', z: 2 },
+    { id: 1, src: `${import.meta.env.BASE_URL}models/lucca1.jpg`, rotation: -8, x: '30%', y: '40%', z: 2 },
+    { id: 2, src: `${import.meta.env.BASE_URL}models/lucca2.jpg`, rotation: 12, x: '60%', y: '35%', z: 1 },
+    { id: 3, src: `${import.meta.env.BASE_URL}models/lucca3.jpg`, rotation: -5, x: '40%', y: '65%', z: 3 },
+    { id: 4, src: `${import.meta.env.BASE_URL}models/lucca4.jpg`, rotation: 6, x: '65%', y: '60%', z: 2 },
 ]);
 
 const getPolaroidStyle = (card, index) => {
