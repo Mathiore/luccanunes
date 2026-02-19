@@ -424,6 +424,14 @@ onBeforeUnmount(() => {
         <canvas ref="canvasRef" class="webgl-canvas"></canvas>
         <PortfolioMenu v-if="isMenuVisible" @select-folder="handleFolderSelection" @open-album="handleAlbumOpen" />
         <CameraOverlay :scroll-progress="smoothedScrollP" />
+        
+        <div class="scroll-indicator" :class="{ 'fade-out': hasTriggeredScroll || currentScrollP > 0.01 || isLoading }">
+            <span class="scroll-text">SCROLL DOWN</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="scroll-arrow">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+        </div>
     </div>
   </section>
 </template>
@@ -452,5 +460,51 @@ onBeforeUnmount(() => {
   height: 100%;
   display: block;
   z-index: 10;
+}
+
+.scroll-indicator {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    z-index: 25;
+    transition: opacity 0.5s ease-out;
+    pointer-events: none;
+    opacity: 1;
+}
+
+.scroll-indicator.fade-out {
+    opacity: 0;
+}
+
+.scroll-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    font-weight: 300;
+    text-transform: uppercase;
+}
+
+.scroll-arrow {
+    width: 24px;
+    height: 24px;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-3px);
+  }
 }
 </style>
