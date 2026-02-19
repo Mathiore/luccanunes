@@ -27,6 +27,8 @@ let isAnimating = false;
 const isLoading = ref(true);
 const loadingProgress = ref(0);
 const currentScrollP = ref(0); // For RAF sync
+const smoothedScrollP = ref(0); // For visual animation trigger
+const hasTriggeredScroll = ref(false); // One-shot trigger
 
 // Mobile detection
 const isMobile = window.innerWidth < 768;
@@ -213,6 +215,39 @@ const startAnimation = () => {
     animationProgress = 0;
 };
 
+const performAutoScroll = () => {
+    if (!containerRef.value) return;
+    
+    // We want to scroll to the point where the sticky section finishes
+    // Which is essentially the height of the container minus one viewport
+    // (Because at that point, the camera is "done" and next section starts)
+    const totalHeight = containerRef.value.offsetHeight;
+    const targetY = totalHeight - window.innerHeight;
+    const startY = window.scrollY;
+    const distance = targetY - startY;
+
+    if (distance < 10) return; // Already there
+
+    const duration = 1500; // 1.5s duration
+    let startTime = null;
+
+    const step = (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const progress = timestamp - startTime;
+        const t = Math.min(progress / duration, 1);
+        
+        // Easing (easeInOutCubic)
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        
+        window.scrollTo(0, startY + (distance * ease));
+        
+        if (t < 1) {
+            requestAnimationFrame(step);
+        }
+    };
+    requestAnimationFrame(step);
+};
+
 const onScroll = () => {
     if (!containerRef.value) return;
     
@@ -225,6 +260,12 @@ const onScroll = () => {
     
     // Store for RAF
     currentScrollP.value = scrollP;
+
+    // Trigger auto-scroll on small downward movement
+    if (scrollP > 0.01 && scrollP < 0.9 && !hasTriggeredScroll.value) {
+        hasTriggeredScroll.value = true;
+        performAutoScroll();
+    }
 };
 
 const animate = () => {
@@ -247,34 +288,35 @@ const animate = () => {
       // Ensure model is facing correctly during animation
       if (model) model.rotation.y = Math.PI;
   } else {
-      // Scroll controlled animation
-      const scrollP = currentScrollP.value;
+      // Scroll controlled animation - DRIVEN BY AUTO SCROLL WINDOW
+      const rawScroll = currentScrollP.value;
+      
+      // Smooth damping to follow the window scroll
+      // Removed the "targetP" forcing logic so visuals stay synced with the physical scroll (which is now automated)
+      smoothedScrollP.value += (rawScroll - smoothedScrollP.value) * 0.1;
+      
+      const visualP = smoothedScrollP.value;
+
       const startZ = 0.8;
       const endZ = 0.15;
       
-      const currentZ = startZ - (scrollP * (startZ - endZ));
+      const currentZ = startZ - (visualP * (startZ - endZ));
       if (camera) camera.position.z = currentZ;
       
       // Scene updates synced with RAF
       if (model) {
           // Offsetting rotation by PI (180 deg) because the model is naturally backwards
-          model.rotation.y = Math.PI + (scrollP * Math.PI); 
+          // Animate rotation based on the smoothed visual progress
+          model.rotation.y = Math.PI + (visualP * Math.PI); 
           
-          const switchThreshold = 0.90;
-          model.visible = scrollP < switchThreshold;
+          // Switch earlier to avoid "stuck at back of camera" state
+          const switchThreshold = 0.95; 
+          // Keep visibility tied to PHYSICAL scroll so the section behaves as a scroll spacer/transition
+          model.visible = rawScroll < switchThreshold;
           
-          isMenuVisible.value = scrollP >= switchThreshold;
+          isMenuVisible.value = rawScroll >= switchThreshold;
       }
   }
-
-  // Slight rotation of model for dynamism REMOVED
-  
-  // Hover Logic Removed
-  
-  // Rotate Grid Models Removed
-
-
-
 
   renderer.render(scene, camera);
 };
@@ -282,11 +324,6 @@ const animate = () => {
 const onPointerMove = (event) => {
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-};
-
-const checkIntersection = (clientX, clientY) => {
-    // 3D Intersection logic removed.
-    // PortfolioMenu handles clicks now.
 };
 
 const onCanvasClick = (event) => {
@@ -383,10 +420,10 @@ onBeforeUnmount(() => {
     <AlbumModal v-if="showAlbum" :album="selectedAlbum" @close="showAlbum = false" />
   
     <div ref="stickyWrapperRef" class="sticky-wrapper">
-        <BackgroundLayer :scroll-progress="currentScrollP" :is-loading="isLoading" />
+        <BackgroundLayer :scroll-progress="smoothedScrollP" :is-loading="isLoading" />
         <canvas ref="canvasRef" class="webgl-canvas"></canvas>
         <PortfolioMenu v-if="isMenuVisible" @select-folder="handleFolderSelection" @open-album="handleAlbumOpen" />
-        <CameraOverlay :scroll-progress="currentScrollP" />
+        <CameraOverlay :scroll-progress="smoothedScrollP" />
     </div>
   </section>
 </template>
